@@ -278,7 +278,7 @@ public class ComboBoxTest extends AbstractUITagTest {
                 strutsBodyTagsAreReflectionEqual(tag, freshTag));
     }
 
-    public void testJsCallNamingUsesEscapedId() throws Exception {
+    public void testDataAttributeUsesEscapedId() throws Exception {
         TestAction testAction = (TestAction) action;
         testAction.setFoo("hello");
 
@@ -306,7 +306,7 @@ public class ComboBoxTest extends AbstractUITagTest {
                 strutsBodyTagsAreReflectionEqual(tag, freshTag));
     }
 
-    public void testJsCallNamingUsesEscapedId_clearTagStateSet() throws Exception {
+    public void testDataAttributeUsesEscapedId_clearTagStateSet() throws Exception {
         TestAction testAction = (TestAction) action;
         testAction.setFoo("hello");
 
@@ -335,6 +335,65 @@ public class ComboBoxTest extends AbstractUITagTest {
         assertTrue("Tag state after doEndTag() and explicit tag state clearing is inequal to new Tag with pageContext/parent set.  " +
                 "May indicate that clearTagStateForTagPoolingServers() calls are not working properly.",
                 strutsBodyTagsAreReflectionEqual(tag, freshTag));
+    }
+
+    public void testHtml5ThemeRendersDataAttributes() throws Exception {
+        // The ComboBox-1..4 fixtures all render the xhtml -> simple path, so a typo in the html5 template's
+        // data-struts-combobox-target-id / data-struts-header-key / data-struts-empty-option lines would go
+        // unnoticed. Render the html5 theme explicitly and pin all three attributes.
+        TestAction testAction = (TestAction) action;
+        testAction.setFoo("banana");
+
+        List l = new ArrayList();
+        l.add("apple");
+        l.add("banana");
+        testAction.setCollection(l);
+
+        ComboBoxTag tag = new ComboBoxTag();
+        tag.setPageContext(pageContext);
+        tag.setTheme("html5");
+        tag.setLabel("My Favourite Fruit");
+        tag.setName("myFavouriteFruit");
+        tag.setEmptyOption("true");
+        tag.setHeaderKey("-1");
+        tag.setHeaderValue("--- Please Select ---");
+        tag.setList("collection");
+        tag.setValue("%{foo}");
+
+        tag.doStartTag();
+        tag.doEndTag();
+
+        verify(ComboBoxTag.class.getResource("ComboBox-5.txt"));
+    }
+
+    public void testTwoSameNameCombosResolveByOwnId() throws Exception {
+        // Two comboboxes sharing a name in one form must each drive their own text field. Resolution keys on the
+        // field id (data-struts-combobox-target-id), not the shared name, so each select carries its own id and
+        // combobox.js resolves the right input by getElementById. Matching by name could not tell the pair apart.
+        TestAction testAction = (TestAction) action;
+        ArrayList collection = new ArrayList();
+        collection.add("foo");
+        testAction.setCollection(collection);
+
+        ComboBoxTag first = new ComboBoxTag();
+        first.setPageContext(pageContext);
+        first.setTheme("simple");
+        first.setName("tag");
+        first.setId("first");
+        first.setList("collection");
+        first.doStartTag();
+        first.doEndTag();
+
+        ComboBoxTag second = new ComboBoxTag();
+        second.setPageContext(pageContext);
+        second.setTheme("simple");
+        second.setName("tag");
+        second.setId("second");
+        second.setList("collection");
+        second.doStartTag();
+        second.doEndTag();
+
+        verify(ComboBoxTag.class.getResource("ComboBox-6.txt"));
     }
 
 }
